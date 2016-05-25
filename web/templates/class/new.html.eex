@@ -1,0 +1,32 @@
+<h2>New class</h2>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Select</th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for item <- @itemss do %>
+    <tr>
+      <td><%= item["name"] %></td>
+      <td><%= item["type"] %></td>
+      <td><%= item["select"] %></td>
+
+      <td class="text-right">
+        <%#= link "Edit", to: class_path(@conn, :item_edit, class), class: "btn btn-default btn-xs" %>
+        <%#= link "Delete", to: class_path(@conn, :item_delete, class), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<%= link "New item", to: class_path(@conn, :item_new, %{items: @items}) %>
+
+<%= render "form.html", changeset: @changeset,
+                        action: class_path(@conn, :create, %{items: @items}) %>
+
+<%= link "Back", to: class_path(@conn, :index) %>

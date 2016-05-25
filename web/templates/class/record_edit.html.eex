@@ -1,0 +1,29 @@
+<h2>Edit record</h2>
+
+<%= form_for @conn, class_path(@conn, :record_update, @class, record: @record), [as: :edit_record],  fn f -> %>
+
+  <div class="form-group">
+    <%= for item <- @items do %>
+      <%= label f, String.to_atom(item["name"]), class: "control-label" %>
+      <%= if item["type"] == "int" do %> 
+      <%= number_input f, String.to_atom(item["name"]), [value: @record[item["name"]], class: "form-control"] %>     
+      <% end %>
+      <%= if item["type"] == "str" do %>
+      <%= text_input f, String.to_atom(item["name"]), [value: @record[item["name"]], class: "form-control"] %>    
+      <% end %>
+      <%= if item["type"] == "date" do %>
+      </br>
+      <%= date_select f, String.to_atom(item["name"]), [value: @record[item["name"]], class: "form-control"] %>   
+      <% end %>
+      <%= if item["type"] == "sel" do %>
+      <%= select f, String.to_atom(item["name"]), String.split(item["select"], ","), [value: @record[item["name"]], class: "form-control"] %>   
+      <% end %>
+    <% end %>
+  </div>
+
+  <div class="form-group">
+    <%= submit "Submit", class: "btn btn-primary" %>
+  </div>
+<% end %>
+
+<%= link "Back", to: class_path(@conn, :show, @class) %>

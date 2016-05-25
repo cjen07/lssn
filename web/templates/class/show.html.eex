@@ -1,0 +1,59 @@
+<h2>Show class</h2>
+
+<ul>
+
+  <li>
+    <strong>Name:</strong>
+    <%= @name %>
+  </li>
+
+</ul>
+
+<table class="table">
+  <thead>
+    <tr>
+      <%= for item <- @items do %>
+        <th><%= item %></th>
+      <% end %>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+<%= form_for @conn, class_path(@conn, :show, @class), [as: :search], fn f -> %>
+
+      <%= for item <- @items do %>
+        <th><%= text_input f, String.to_atom(item), [size: "7"] %></th>
+      <% end %>
+  
+      <th class="text-right"><%= submit "Search" %></th>
+
+<% end %>
+      
+    </tr>
+  </tbody>
+  <tbody>
+<%= for record <- @records do %>
+    <tr>
+      <%= for item <- @items do %>
+        <td><%= record[item] %></td>
+      <% end %>
+      <td class="text-right">
+        <%= link "Edit", to: class_path(@conn, :record_edit, @class, record: record), class: "btn btn-default btn-xs" %>
+        <%= link "Delete", to: class_path(@conn, :record_delete, @class, record: record), method: :delete, data: [confirm: "Are you sure?"], class: "btn btn-danger btn-xs" %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+  <tbody>
+    <tr>
+      <%= for it <- @a_s do %>
+        <th><%= it %></th>
+      <% end %>  
+      <th class="text-right">Average/Sum</th>      
+    </tr>
+  </tbody>
+</table>
+
+<%= link "New record", to: class_path(@conn, :record_new, @class) %>
+<br/>
+<%= link "Back", to: class_path(@conn, :index) %>
