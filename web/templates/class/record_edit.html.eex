@@ -13,7 +13,8 @@
       <% end %>
       <%= if item["type"] == "date" do %>
       </br>
-      <%= date_select f, String.to_atom(item["name"]), [value: @record[item["name"]], class: "form-control"] %>   
+      <%= date_select f, String.to_atom(item["name"]), [value: @record[item["name"]], class: "form-control"] %>
+      </br>  
       <% end %>
       <%= if item["type"] == "sel" do %>
       <%= select f, String.to_atom(item["name"]), String.split(item["select"], ","), [value: @record[item["name"]], class: "form-control"] %>   

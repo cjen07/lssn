@@ -56,4 +56,6 @@
 
 <%= link "New record", to: class_path(@conn, :record_new, @class) %>
 <br/>
+<%= link "Import", to: class_path(@conn, :import_new, @class) %>
+<br/>
 <%= link "Back", to: class_path(@conn, :index) %>

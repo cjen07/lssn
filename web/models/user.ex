@@ -3,13 +3,14 @@ defmodule Lssn.User do
 
   schema "users" do
     field :name, :string
+    field :type, :string
     field :password, :string, virtual: true
     field :password_hash, :string
 
     timestamps
   end
 
-  @required_fields ~w(name password password_hash)
+  @required_fields ~w(name type password password_hash)
   @optional_fields ~w()
 
   @doc """

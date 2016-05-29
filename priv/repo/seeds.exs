@@ -14,4 +14,8 @@ alias Lssn.Repo
 alias Lssn.User
 alias Comeonin.Bcrypt
 
-Repo.insert!(%User{name: "admin", password_hash: Bcrypt.hashpwsalt("admin")})
+Repo.insert!(%User{name: "lecturer1", type: "user", password_hash: Bcrypt.hashpwsalt("lecturer1")})
+
+ # admin = Repo.get User, 1
+ # cs = User.changeset admin, %{name: "admin", type: "admin", password: "admin", password_hash: Bcrypt.hashpwsalt("admin")}
+ # Repo.update!(cs)

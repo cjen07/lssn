@@ -21,6 +21,8 @@ defmodule Lssn.Router do
     resources "/classes", ClassController, except: [:edit, :update]
 
     get "/classes/:id/export", ClassController, :export
+    get "/classes/:id/import", ClassController, :import_new
+    post "/classes/:id/import", ClassController, :import_create
 
     get "/classes/new/item_new", ClassController, :item_new
     post "/classes/new", ClassController, :item_create
@@ -34,6 +36,7 @@ defmodule Lssn.Router do
     post "/classes/:id", ClassController, :show
 
     resources "/sessions", SessionController, only: [:new, :create, :delete]
+
   end
 
   # Other scopes may use custom stacks.

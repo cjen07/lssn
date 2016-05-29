@@ -5,13 +5,35 @@ defmodule Lssn.ClassController do
 
   plug :scrub_params, "class" when action in [:create, :update]
 
-  plug :authenticate when action in [:index, :new, :item_new, :record_new, :create,
-    :item_create, :record_create, :edit, :record_edit, :update, :record_update, :delete,
-    :record_delete, :export, :show]
+  plug :authenticate1 when action in [:index, :record_new,
+    :record_create, :record_edit, :update, :record_update,
+    :export, :show, :import_new, :import_create]
 
-  defp authenticate(conn, _opts) do
+  plug :authenticate2 when action in [:new, :item_new, :create,
+  :item_create, :edit, :delete,
+  :record_delete]
+
+  defp authenticate1(conn, _opts) do
     if conn.assigns.current_user do
       conn
+    else
+      conn
+      |> put_flash(:error, "You must be logged in to access that page")
+      |> redirect(to: page_path(conn, :index))
+      |> halt()
+    end
+  end
+
+  defp authenticate2(conn, _opts) do
+    if conn.assigns.current_user do
+      if conn.assigns.current_user.type == "admin" do
+        conn
+      else
+        conn
+        |> put_flash(:error, "You must be admin to access that page")
+        |> redirect(to: class_path(conn, :index))
+        |> halt()
+      end
     else
       conn
       |> put_flash(:error, "You must be logged in to access that page")
@@ -296,6 +318,7 @@ defmodule Lssn.ClassController do
         Enum.filter(records, fn x -> Enum.find((for item <- items, do: check(x[item["name"]], s[item["name"]], item["type"])), true, &(!&1)) end)        
     end
 
+
     a_s = 
     for n <- items do
       case n["type"] do
@@ -396,7 +419,8 @@ defmodule Lssn.ClassController do
     class = Repo.get!(Class, id)
     records = class.record
     {:ok, records} = JSON.decode(records)
-    records = Enum.filter(records, fn x -> x != record end)
+    # records = Enum.filter(records, fn x -> x != record end)
+    records = List.delete(records, record)
     IO.inspect records
     {:ok, records} = JSON.encode(records)
     changeset = Class.changeset(class, %{"record" => records})  
@@ -442,5 +466,126 @@ defmodule Lssn.ClassController do
     |> halt
   end
 
+  def import_new(conn, %{"id" => id}) do
+    class = Repo.get!(Class, id)
+    render(conn, "import_new.html", class: class)
+  end
+
+  defp test(h, x, items) do
+    item = Enum.find(items, fn x -> x["name"] == h end)
+    case item["type"] do
+      "str" -> {h, x}
+      "int" ->
+        case x do
+          "" -> {h, x}
+          _ -> 
+            try do
+              String.to_integer(x)
+            rescue
+              _ -> 
+                false
+            else
+              _ -> {h, x}
+            end
+        end
+      "date" ->
+        case x do
+          "" -> {h, x}
+          _ ->
+            try do
+              date = String.split(x, "-")
+              [y, m, d] = Enum.map(date, &(String.to_integer(&1)))
+              {{year,month,day},_} = :erlang.localtime()
+              y1 = year - 5
+              y2 = year + 5
+              [true, true, true] = [y1 <= y and y <= y2, 1 <= m and m <= 12, 1 <= d and d <= 31]
+              [yy, mm, dd] = [Integer.to_string(y), Integer.to_string(m), Integer.to_string(d)]
+              yy <> "-" <> mm <> "-" <> dd
+            rescue
+              _ ->
+                false
+            else
+              v -> {h, v}
+            end
+        end
+      "sel" ->
+        case x do
+          "" -> {h, x}
+          _ -> 
+            sel = String.split(item["select"], ",")
+            case Enum.any?(sel, fn it -> x == it end) do
+              true -> {h, x}
+              false -> 
+                false
+            end
+        end
+    end
+  end
+
+
+  def import_create(conn, %{"id" => id}) do
+    class = Repo.get!(Class, id)
+    items = class.config
+    records = class.record
+    {:ok, items} = JSON.decode(items)
+    {:ok, records} = JSON.decode(records)
+    try do
+      file = conn.params["csv"]["file"]
+      path = file.path
+      path
+      |> File.stream!
+      |> CSV.decode
+      |> Enum.to_list
+    rescue
+      _ ->
+        conn
+        |> put_flash(:error, "Invalid file.")
+        |> redirect(to: class_path(conn, :import_new, class))
+    else
+      list ->
+        header = Enum.at(list, 0)
+        body = Enum.drop(list, 1)
+        if is_nil(header) or Enum.empty?(body) do
+          conn
+          |> put_flash(:error, "No data in the file.")
+          |> redirect(to: class_path(conn, :import_new, class))
+        end
+
+        names = Enum.map(items, &(Map.get(&1, "name")))
+        flag = Enum.all?(header, fn x -> Enum.any?(names, fn y -> y == x end) end)
+        if !flag do
+          conn
+          |> put_flash(:error, "Invalid header of the data.")
+          |> redirect(to: class_path(conn, :import_new, class))
+        end
+        values = body
+        |> Enum.map(&(Enum.zip(header, &1)))
+        |> Enum.map(&(Enum.map(&1, fn {h, x} -> test(h, x, items) end)))
+        |> Enum.filter(&(Enum.all?(&1)))
+        |> Enum.map(&(Map.new(&1)))
+
+        IO.inspect values
+
+        records = Enum.concat(records, values)
+
+        IO.inspect records
+        {:ok, records} = JSON.encode(records)
+        changeset = Class.changeset(class, %{"record" => records})
+
+        case Repo.update(changeset) do
+          {:ok, class} ->
+            conn
+            |> put_flash(:info, "Record imported successfully.")
+            |> redirect(to: class_path(conn, :show, class))
+          {:error, _changeset} ->
+            conn
+            |> put_flash(:error, "Record cannot be imported.")
+            |> redirect(to: class_path(conn, :show, class))
+        end
+
+    end
+
+    
+  end
 
 end
